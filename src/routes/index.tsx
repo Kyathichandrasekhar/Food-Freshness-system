@@ -4,10 +4,17 @@ import { KpiCard } from "@/components/widgets/kpi-card";
 import { GaugeRing } from "@/components/widgets/gauge-ring";
 import { FoodCard } from "@/components/widgets/food-card";
 import { ShelfLifeCard } from "@/components/widgets/shelf-life-card";
-import { foods, kpis, sensorActivity, insights, devices } from "@/lib/freshguard-data";
+import { insights, devices } from "@/lib/freshguard-data";
+import {
+  useRealtimeFoods,
+  useRealtimeKpis,
+  useRealtimeSensorHistory,
+  useFirebaseConnection,
+  useRealtimeLatestSensor,
+} from "@/hooks/use-firebase-data";
 import {
   ShieldCheck, Leaf, Package, CheckCircle2, AlertTriangle, XCircle,
-  Sparkles, Cpu, Activity, ChevronRight,
+  Sparkles, Cpu, Activity, ChevronRight, Radio,
 } from "lucide-react";
 import {
   AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid,
@@ -24,6 +31,12 @@ export const Route = createFileRoute("/")({
 });
 
 function DashboardPage() {
+  const { foods, isLive: isFoodsLive } = useRealtimeFoods();
+  const kpis = useRealtimeKpis(foods);
+  const { history: sensorActivity, isLive: isSensorLive } = useRealtimeSensorHistory(24);
+  const { isConnected } = useFirebaseConnection();
+  const { reading: latestSensor } = useRealtimeLatestSensor();
+
   const recent = foods.slice(0, 4);
 
   return (
@@ -32,9 +45,26 @@ function DashboardPage() {
         title="Welcome back, Aarav"
         subtitle="Smart Food Safety Monitoring Powered by Artificial Intelligence"
         actions={
-          <button className="inline-flex items-center gap-2 px-4 h-10 rounded-xl gradient-safe text-white text-sm font-medium shadow-[var(--shadow-glow)] hover:opacity-95 transition">
-            <Sparkles className="size-4" /> Run AI Scan
-          </button>
+          <div className="flex items-center gap-2">
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition ${
+                isConnected
+                  ? "bg-safe/10 border-safe/30 text-safe"
+                  : "bg-muted/40 border-border text-muted-foreground"
+              }`}
+            >
+              <span
+                className={`size-2 rounded-full ${
+                  isConnected ? "bg-safe animate-pulse" : "bg-muted-foreground"
+                }`}
+              />
+              <Radio className="size-3" />
+              {isConnected ? "Firebase Live" : "Local / Offline"}
+            </div>
+            <button className="inline-flex items-center gap-2 px-4 h-10 rounded-xl gradient-safe text-white text-sm font-medium shadow-[var(--shadow-glow)] hover:opacity-95 transition">
+              <Sparkles className="size-4" /> Run AI Scan
+            </button>
+          </div>
         }
       />
 

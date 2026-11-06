@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/layout/app-shell";
 import { FoodCard } from "@/components/widgets/food-card";
-import { foods } from "@/lib/freshguard-data";
-import { Filter, SlidersHorizontal } from "lucide-react";
+import { useRealtimeFoods, useFirebaseConnection } from "@/hooks/use-firebase-data";
+import { Filter, SlidersHorizontal, Radio } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +14,10 @@ export const Route = createFileRoute("/food-monitoring")({
 const filters = ["All", "SAFE", "CAUTION", "UNSAFE"] as const;
 
 function FoodMonitoringPage() {
+  const { foods, isLive } = useRealtimeFoods();
+  const { isConnected } = useFirebaseConnection();
   const [f, setF] = useState<(typeof filters)[number]>("All");
-  const list = f === "All" ? foods : foods.filter(x => x.status === f);
+  const list = f === "All" ? foods : foods.filter((x) => x.status === f);
 
   return (
     <div className="space-y-6">
@@ -23,10 +25,31 @@ function FoodMonitoringPage() {
         title="Food Monitoring"
         subtitle="Live freshness reading for every item across your facility"
         actions={
-          <>
-            <button className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-border hover:bg-accent text-sm"><SlidersHorizontal className="size-4" />Sort</button>
-            <button className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-border hover:bg-accent text-sm"><Filter className="size-4" />Filters</button>
-          </>
+          <div className="flex items-center gap-2">
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition ${
+                isConnected
+                  ? "bg-safe/10 border-safe/30 text-safe"
+                  : "bg-muted/40 border-border text-muted-foreground"
+              }`}
+            >
+              <span
+                className={`size-2 rounded-full ${
+                  isConnected ? "bg-safe animate-pulse" : "bg-muted-foreground"
+                }`}
+              />
+              <Radio className="size-3" />
+              {isConnected ? "Live Sync" : "Cached"}
+            </div>
+            <button className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-border hover:bg-accent text-sm">
+              <SlidersHorizontal className="size-4" />
+              Sort
+            </button>
+            <button className="inline-flex items-center gap-2 h-10 px-3 rounded-xl border border-border hover:bg-accent text-sm">
+              <Filter className="size-4" />
+              Filters
+            </button>
+          </div>
         }
       />
 

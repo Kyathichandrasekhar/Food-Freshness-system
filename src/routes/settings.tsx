@@ -4,6 +4,7 @@ import { Bell, SlidersHorizontal, Brain, Database, Palette, Cpu } from "lucide-r
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useState } from "react";
+import { useFirebaseConnection } from "@/hooks/use-firebase-data";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — FreshGuard AI" }] }),
@@ -43,12 +44,7 @@ function SettingsPage() {
           <Row label="Share anonymous telemetry" desc="Helps improve global model" />
         </Card>
 
-        <Card icon={Database} title="Firebase Configuration" subtitle="Realtime database connection">
-          <FormRow label="Project ID" value="freshguard-iot" />
-          <FormRow label="Region" value="asia-south1" />
-          <FormRow label="Realtime DB" value="freshguard-iot.firebaseio.com" />
-          <button className="mt-2 h-9 px-3 rounded-lg gradient-safe text-white text-xs font-medium">Test connection</button>
-        </Card>
+        <FirebaseCard />
 
         <Card icon={Palette} title="Theme" subtitle="Appearance preferences">
           <Row label="Dark mode" desc="Sync with system or override" />
@@ -110,7 +106,68 @@ function FormRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">{label}</div>
-      <input defaultValue={value} className="w-full h-9 px-3 rounded-lg border border-border bg-background/60 text-sm font-mono" />
+      <input defaultValue={value} readOnly className="w-full h-9 px-3 rounded-lg border border-border bg-background/60 text-sm font-mono text-muted-foreground" />
     </div>
+  );
+}
+
+function FirebaseCard() {
+  const { isConnected, isSupported } = useFirebaseConnection();
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
+  const handleTest = () => {
+    setTesting(true);
+    setTestResult(null);
+    setTimeout(() => {
+      setTesting(false);
+      if (isConnected) {
+        setTestResult("Online — Realtime Database connected successfully.");
+      } else {
+        setTestResult("Offline / Connecting — Verifying WebSocket stream...");
+      }
+    }, 800);
+  };
+
+  return (
+    <Card icon={Database} title="Firebase Configuration" subtitle="Realtime database connection & sync">
+      <FormRow label="Project ID" value="foodfreshnessmonitor" />
+      <FormRow label="Realtime DB" value="foodfreshnessmonitor-default-rtdb.firebaseio.com" />
+      <FormRow label="Storage Bucket" value="foodfreshnessmonitor.firebasestorage.app" />
+      
+      <div className="pt-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-muted-foreground">Status:</span>
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-md ${
+              isConnected
+                ? "bg-safe/15 text-safe"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <span
+              className={`size-1.5 rounded-full ${
+                isConnected ? "bg-safe animate-pulse" : "bg-muted-foreground"
+              }`}
+            />
+            {isConnected ? "Connected (Live)" : "Local / Offline"}
+          </span>
+        </div>
+
+        {testResult && (
+          <div className="text-xs p-2 rounded-lg bg-accent/50 text-foreground mb-2">
+            {testResult}
+          </div>
+        )}
+
+        <button
+          onClick={handleTest}
+          disabled={testing}
+          className="h-9 px-3 rounded-lg gradient-safe text-white text-xs font-medium hover:opacity-95 transition disabled:opacity-50"
+        >
+          {testing ? "Testing..." : "Test connection"}
+        </button>
+      </div>
+    </Card>
   );
 }
